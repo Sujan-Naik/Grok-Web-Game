@@ -8,7 +8,7 @@ body {
 h1 {
     color: #333;
 }
-canvas {
+#gameContainer {
     border: 2px solid #333;
-    background-color: #4CAF50;
+    background-color: #000;
 }
