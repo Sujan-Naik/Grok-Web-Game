@@ -1,23 +1,25 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+// Three.js setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth * 0.8, window.innerHeight * 0.8);
+document.getElementById('gameContainer').appendChild(renderer.domElement);
 
 // Car properties
-const car = {
-    x: 400,
-    y: 550,
-    width: 30,
-    height: 50,
-    speed: 2,
-    angle: 0
-};
+const carGeometry = new THREE.BoxGeometry(1, 0.5, 2);
+const carMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const car = new THREE.Mesh(carGeometry, carMaterial);
+car.position.set(0, 0, 10);
+scene.add(car);
 
-// Track properties (simple oval)
-const track = {
-    innerRadius: 100,
-    outerRadius: 250,
-    centerX: 400,
-    centerY: 300
-};
+// Track (simple torus)
+const trackGeometry = new THREE.TorusGeometry(10, 3, 16, 100);
+const trackMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+const track = new THREE.Mesh(trackGeometry, trackMaterial);
+scene.add(track);
+
+// Camera position
+camera.position.z = 20;
 
 // Keys
 const keys = {};
@@ -31,69 +33,37 @@ window.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
-// Draw track
-function drawTrack() {
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.ellipse(track.centerX, track.centerY, track.outerRadius, track.innerRadius, 0, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(track.centerX, track.centerY, track.innerRadius, track.outerRadius, 0, 0, 2 * Math.PI);
-    ctx.stroke();
-}
-
-// Draw car
-function drawCar() {
-    ctx.save();
-    ctx.translate(car.x, car.y);
-    ctx.rotate(car.angle);
-    ctx.fillStyle = 'red';
-    ctx.fillRect(-car.width / 2, -car.height / 2, car.width, car.height);
-    ctx.restore();
-}
-
-// Check if car is on track
-function isOnTrack(x, y) {
-    const dist = Math.sqrt((x - track.centerX) ** 2 + (y - track.centerY) ** 2);
-    return dist >= track.innerRadius && dist <= track.outerRadius;
+// Check if car is on track (simplified)
+function isOnTrack(position) {
+    const dist = Math.sqrt(position.x ** 2 + position.z ** 2);
+    return dist >= 7 && dist <= 13; // Approximate torus inner/outer
 }
 
 // Game loop
 function gameLoop() {
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw track
-    drawTrack();
-
     // Handle input
     if (keys['ArrowUp']) {
-        car.x += Math.sin(car.angle) * car.speed;
-        car.y -= Math.cos(car.angle) * car.speed;
+        car.position.z -= 0.1;
     }
     if (keys['ArrowDown']) {
-        car.x -= Math.sin(car.angle) * car.speed;
-        car.y += Math.cos(car.angle) * car.speed;
+        car.position.z += 0.1;
     }
     if (keys['ArrowLeft']) {
-        car.angle -= 0.05;
+        car.position.x -= 0.1;
     }
     if (keys['ArrowRight']) {
-        car.angle += 0.05;
+        car.position.x += 0.1;
     }
 
-    // Keep car on track (simple boundary)
-    if (!isOnTrack(car.x, car.y)) {
-        // Reset position if off track
-        car.x = 400;
-        car.y = 550;
-        car.angle = 0;
+    // Keep car on track (reset if off)
+    if (!isOnTrack(car.position)) {
+        car.position.set(0, 0, 10);
     }
 
-    // Draw car
-    drawCar();
+    // Rotate track for visual effect
+    track.rotation.y += 0.01;
 
+    renderer.render(scene, camera);
     requestAnimationFrame(gameLoop);
 }
 
